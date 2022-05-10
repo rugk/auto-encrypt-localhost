@@ -5,6 +5,112 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [7.0.7] - 2021-03-24
+
+Once more, with documentation this time!
+
+### Changed
+
+  - Updated documentation to reflect how the module actually works now.
+
+## [7.0.6] - 2021-03-24
+
+The hybrid approach.
+
+### Changed
+
+Implements a hybrid approach to mkcert installation and certificate authority and certificate creation that combines the best parts of the methods used in 6.x and 7.x.
+
+Specifically:
+
+  - mkcert is now installed at post-install (which removes the requirement for the graphical sudo prompt, which was using pkexec, which behaves differently to sudo and was creating the certificate material files with the wrong permissions on Linux).
+  - root certificate authority and TLS certificates are created as necessary at runtime (while this requires the person to enter their sudo password, the prompt is shown in the command-line as expected unlike [the npm bug that was causing the prompt to be hidden when run in a lifecycle script](https://github.com/npm/cli/issues/2887)).
+
+Also, reduced unpacked size of the package from 83.2KB to 48.7KB by linking to the AGPL license instead of including the full text.
+
+## [7.0.5] - 2021-03-19
+
+### Fixed
+
+  - Installation on macOS. This was failing because of differences in how the graphical sudo prompt affects file permissions between Linux and macOS.
+
+### Added
+
+  - Re-implemented Windows support (tested/supported only on Windows 10, under Windows Terminal, with PowerShell).
+
+## [7.0.4] - 2021-03-17
+
+### Added
+
+   - Screenshot of the graphical sudo prompt in 7.0.3 added to the readme.
+
+## [7.0.3] - 2021-03-17
+
+### Fixed
+
+  - No longer fails on install on system accounts that don’t have passwordless sudo set up. Instead, shows a graphical password box to get the person’s sudo password. (Fixes https://source.small-tech.org/site.js/lib/auto-encrypt-localhost/-/issues/17. See https://github.com/npm/cli/issues/2887 for the original npm bug.
+
+## [7.0.2] - 2021-03-06
+
+### Fixed
+
+  - Removed old binary declaration from package file.
+
+## [7.0.1] - 2021-03-06
+
+### Fixed
+
+  - Added missing bin folder to the npm package.
+
+## [7.0.0] - 2021-03-06
+
+This version is optimised for use on development machines via npm install. It carries out the mkcert binary installation in a postinstall script. In version 6.x and earlier, all binaries for all platforms were bundled as the library also supported use from a binary install (see [Site.js](https://sitejs.org)). The 6.x branch will still be updated with new mkcert versions but the 7.x and later versions will be used in [Place](https://github.com/small-tech/place).
+
+### Changed
+
+  - Uses ECMAScript Modules (ESM; es6 modules)
+  - __Breaking change:__ mkcert binary is now downloaded during installation and the root certificate authority and TLS certificates are created at this time also.
+  - __Breaking change:__ The settings path is no longer configurable and is shared by all installations of this package. This means whenever you install this package, it will update to the latest version of mkcert and recreate the root certificate authorities and local certificates and these will be used by all instances of Auto Encrypt Localhost on your dev machine (and this is most likely the behaviour you want).
+  - __Breaking change:__ Removed command-line interface as it is no longer nececessary. Your local certificate authority and TLS certificates are ready to be used once your npm install is complete.
+
+## [6.1.0] - 2020-11-04
+
+### Changed
+
+  - Upgrade mkcert to version 1.4.2.
+  - Include separate mkcert arm64 build.
+
+## [6.0.0] - 2020-11-03
+
+### Changed
+
+  - __Breaking change:__ Running multiple servers at different HTTPS ports no longer results in an error due to port 80 being unavailable for the HTTP Server. However, know that only the first server will get the HTTP Server at port 80 that redirects HTTP calls to HTTPS and also serves your local root certificate authority public key. (#14)
+
+## [5.4.1] - 2020-07-11
+
+### Changed
+
+  - Make the section on disabling privileged ports on Linux more prominent given that we now start a HTTP server and the tests will fail on Linux otherwise.
+
+## [5.4.0] - 2020-07-11
+
+### Added
+
+  - arm64 support.
+
+## [5.3.1] - 2020-07-07
+
+### Fixed
+
+  - Update readme to add missing content.
+
+## [5.3.0] - 2020-07-07
+
+### Added
+
+  - Serves the local root certificate authority’s public key at route /.ca (you can hit this route from a device like an iPhone on your local area network to install the key and trust it on your device to test your local server with that device over your local area network).
+  - Redirects HTTP to HTTPS (#13).
+
 ## [5.2.2] - 2020-07-06
 
 ### Added

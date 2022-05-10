@@ -1,11 +1,14 @@
-const os = require('os')
-const fs = require('fs-extra')
-const path = require('path')
-const bent = require('bent')
-const test = require('tape')
-const AutoEncryptLocalhost = require('..')
+import os from 'os'
+import fs from 'fs-extra'
+import path from 'path'
+import bent from 'bent'
+import test from 'tape'
+import AutoEncryptLocalhost from '../index.js'
 
-const getHttpsString = bent('GET', 'string')
+import '../bin/post-install.js'
+
+const downloadString = bent('GET', 'string')
+const downloadBuffer = bent('GET', 'buffer')
 
 async function asyncForEach(array, callback) {
   for (let index = 0; index < array.length; index++) {
@@ -14,24 +17,19 @@ async function asyncForEach(array, callback) {
 }
 
 test('certificate creation', async t => {
-  // t.plan(12)
+  const settingsPath = path.join(os.homedir(), '.small-tech.org', 'auto-encrypt-localhost')
 
-  const defaultSettingsPath = path.join(os.homedir(), '.small-tech.org', 'auto-encrypt-localhost')
-
-  const keyFilePath = path.join(defaultSettingsPath, 'localhost-key.pem')
-  const certFilePath = path.join(defaultSettingsPath, 'localhost.pem')
-
-  // Remove the settings path in case it already exists.
-  fs.removeSync(defaultSettingsPath)
+  const keyFilePath = path.join(settingsPath, 'localhost-key.pem')
+  const certFilePath = path.join(settingsPath, 'localhost.pem')
 
   // Run Auto Encrypt Localhost.
   const server = AutoEncryptLocalhost.https.createServer((request, response) => {
     response.end('ok')
   })
 
-  t.ok(fs.existsSync(path.join(defaultSettingsPath)), 'Main settings path exists.')
-  t.ok(fs.existsSync(path.join(defaultSettingsPath, 'rootCA.pem')), 'Local certificate authority exists.')
-  t.ok(fs.existsSync(path.join(defaultSettingsPath, 'rootCA-key.pem')), 'Local certificate authority private key exists.')
+  t.ok(fs.existsSync(path.join(settingsPath)), 'Main settings path exists.')
+  t.ok(fs.existsSync(path.join(settingsPath, 'rootCA.pem')), 'Local certificate authority exists.')
+  t.ok(fs.existsSync(path.join(settingsPath, 'rootCA-key.pem')), 'Local certificate authority private key exists.')
   t.ok(fs.existsSync(certFilePath), 'Local certificate exists.')
   t.ok(fs.existsSync(keyFilePath), 'Local certificate private key exists.')
 
@@ -49,7 +47,7 @@ test('certificate creation', async t => {
     })
   })
 
-  const response = await getHttpsString('https://localhost')
+  const response = await downloadString('https://localhost')
 
   t.strictEquals(response, 'ok', 'Response from server is as expected for access via localhost.')
 
@@ -62,28 +60,41 @@ test('certificate creation', async t => {
         .map(addresses => addresses.address)).flat()
 
   await asyncForEach(localIPv4Addresses, async localIPv4Address => {
-    const response = await getHttpsString(`https://${localIPv4Address}`)
+    const response = await downloadString(`https://${localIPv4Address}`)
     t.strictEquals(response, 'ok', `Response from server is as expected for access via ${localIPv4Address}`)
   })
 
-  server.close()
+  // Test downloading the local root certificate authority public key via /.ca route.
+  const downloadedRootCABuffer = await downloadBuffer('http://localhost/.ca')
+  const localRootCABuffer = fs.readFileSync(path.join(AutoEncryptLocalhost.settingsPath, 'rootCA.pem'))
 
-  //
-  // Custom settings path.
-  //
+  t.strictEquals(Buffer.compare(localRootCABuffer, downloadedRootCABuffer), 0, 'The local root certificate authority public key is served correctly.')
 
-  const customSettingsPath = path.join(os.homedir(), '.small-tech.org', 'auto-encrypt-localhost-custom-directory-test', 'second-level-directory')
-
-  // Remove the custom settings path in case it already exists.
-  fs.removeSync(customSettingsPath)
-
-  const server2 = AutoEncryptLocalhost.https.createServer({ settingsPath: customSettingsPath })
-
-  t.ok(fs.existsSync(path.join(customSettingsPath)), '(Custom settings path) Main directory exists.')
-  t.ok(fs.existsSync(path.join(customSettingsPath, 'rootCA.pem')), '(Custom settings path) Local certificate authority exists.')
-  t.ok(fs.existsSync(path.join(customSettingsPath, 'rootCA-key.pem')), '(Custom settings path) Local certificate authority private key exists.')
-  t.ok(fs.existsSync(path.join(customSettingsPath, 'localhost.pem')), '(Custom settings path) Local certificate exists.')
-  t.ok(fs.existsSync(path.join(customSettingsPath, 'localhost-key.pem')), '(Custom settings path) Local certificate private key exists.')
+  // Wait the for the first server to close.
+  await new Promise((resolve, reject) => { server.close(() => { resolve() }) })
 
   t.end()
+})
+
+
+test ('multiple servers', t => {
+  const server1Response = 'Server 1'
+  const server2Response = 'Server 2'
+  const server1 = AutoEncryptLocalhost.https.createServer((request, response) => { response.end(server1Response) })
+  server1.listen(443, () => {
+    const server2 = AutoEncryptLocalhost.https.createServer((request, response) => { response.end(server2Response) })
+    server2.listen(444, async () => {
+      const result1 = await downloadString('https://localhost')
+      const result2 = await downloadString('https://localhost:444')
+
+      t.strictEquals(result1, server1Response, 'Server 1 response is as expected.')
+      t.strictEquals(result2, server2Response, 'Server 2 response is as expected.')
+
+      server1.close(() => {
+        server2.close(() => {
+          t.end()
+        })
+      })
+    })
+  })
 })

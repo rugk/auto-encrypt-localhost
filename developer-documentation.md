@@ -14,7 +14,7 @@ We exist in part thanks to patronage by people like you. If you share [our visio
 
 Auto Encrypt Localhost is supported on:
 
-  - __Node:__ LTS (currently 12.16.1).
+  - __Node:__ LTS (currently 14.16.0).
   - __ECMAScript:__ [ES2019](https://node.green/#ES2019)
 
 ## Overview of relationships
@@ -25,44 +25,64 @@ __Not shown (for clarity):__ third-party Node modules, the `util` namespace with
 
 Generated using [dependency cruiser](https://github.com/sverweij/dependency-cruiser).
 
+To run dependency cruiser, you will need to [install Graphviz](https://graphviz.org/download/).
+
 ## How it works in more detail
 
-Auto Encrypt Localhost is a Node.js wrapper for [mkcert](https://github.com/FiloSottile/mkcert/) that:
+Auto Encrypt Localhost is a Node.js wrapper for [mkcert](https://github.com/FiloSottile/mkcert/) that, at the npm post-install stage:
 
-  * Uses the 64-bit release binaries to support Linux, macOS, and Windows.
+  - Downloads and uses correct mkcert release binary for you machine on Linux, macOS, and Windows.
 
-  * Automatically installs the _certutil_ (nss) dependency on Linux on systems with apt, pacman, yum (untested) and  and on macOS if you have [Homebrew](https://brew.sh) or [MacPorts](https://www.macports.org/) (untested).
+And, on first run (or if the root certificate authority or your TLS certificates are missing):
 
-  * Creates a root Certificate Authority.
+  - Automatically installs the _certutil_ (nss) dependency on Linux on systems with apt, pacman, yum (untested) and  and on macOS if you have [Homebrew](https://brew.sh) or [MacPorts](https://www.macports.org/) (untested).
 
-  * Creates locally-trusted TLS certificates for localhost, 127.0.0.1, and ::1.
+  - Creates a root Certificate Authority.
+
+  - Creates locally-trusted TLS certificates for localhost, 127.0.0.1, and ::1.
 
 You can use these certificates for local development without triggering self-signed certificate errors.
+
+At runtime, you can use the library to create your HTTPS servers instead of using the built-in Node.js `https` module.
 
 For more details on how Auto Encrypt Localhost works behind the scenes, please [see the mkcert README](https://github.com/FiloSottile/mkcert/blob/master/README.md).
 
 ## Tests
 
 ```sh
-npm test
+npm -s test
 ```
 
-To see debug output, run `npm run test-debug` instead.
+To see debug output, run `npm -s run test-debug` instead.
+
+Note that [npm cannot prompt for sudo passwords due to a bug](https://github.com/npm/cli/issues/2887) so you will be prompted for your password prior to the running of the tests in order to unlock sudo while the tests are running.
+
+On Windows, run the following command instead:
+
+```sh
+npm -s run test-on-windows
+```
 
 ## Coverage
 
 ```sh
-npm run coverage
+npm -s run coverage
 ```
 
-To see debug output, run `npm run coverage-debug` instead.
+To see debug output, run `npm -s run coverage-debug` instead.
+
+On Windows, run the following command instead:
+
+```sh
+npm -s run coverage-on-windows
+```
 
 ## Documentation
 
 To regenerate the dependency diagram and this documentation:
 
 ```sh
-npm run generate-developer-documentation
+npm -s run generate-developer-documentation
 ```
 
 <a name="module_@small-tech/auto-encrypt-localhost"></a>
@@ -72,40 +92,40 @@ Automatically provisions and installs locally-trusted TLS certificates for Node.
 (including Express.js, etc.) using mkcert.
 
 **License**: AGPLv3 or later.  
-**Copyright**: © 2020 Aral Balkan, Small Technology Foundation.  
+**Copyright**: © 2020-2021 Aral Balkan, Small Technology Foundation.  
 
 * [@small-tech/auto-encrypt-localhost](#module_@small-tech/auto-encrypt-localhost)
-    * [AutoEncryptLocalhost](#exp_module_@small-tech/auto-encrypt-localhost--AutoEncryptLocalhost) ⏏
-        * [.https](#module_@small-tech/auto-encrypt-localhost--AutoEncryptLocalhost.https)
-        * [.createServer([options])](#module_@small-tech/auto-encrypt-localhost--AutoEncryptLocalhost.createServer) ⇒ <code>https.Server</code>
+    * [module.exports](#exp_module_@small-tech/auto-encrypt-localhost--module.exports) ⏏
+        * [.https](#module_@small-tech/auto-encrypt-localhost--module.exports.https)
+        * [.createServer([options])](#module_@small-tech/auto-encrypt-localhost--module.exports.createServer) ⇒ <code>https.Server</code>
 
-<a name="exp_module_@small-tech/auto-encrypt-localhost--AutoEncryptLocalhost"></a>
+<a name="exp_module_@small-tech/auto-encrypt-localhost--module.exports"></a>
 
-### AutoEncryptLocalhost ⏏
+### module.exports ⏏
 Auto Encrypt Localhost is a static class. Please do not instantiate.
 
 Use: AutoEncryptLocalhost.https.createServer(…)
 
 **Kind**: Exported class  
-<a name="module_@small-tech/auto-encrypt-localhost--AutoEncryptLocalhost.https"></a>
+<a name="module_@small-tech/auto-encrypt-localhost--module.exports.https"></a>
 
-#### AutoEncryptLocalhost.https
+#### module.exports.https
 By aliasing the https property to the AutoEncryptLocalhost static class itself, we enable
-people to add AutoEncryptLocalhost to their existing apps by requiring the module
+people to add AutoEncryptLocalhost to their existing apps by importing the module
 and prefixing their https.createServer(…) line with AutoEncryptLocalhost:
 
-**Kind**: static property of [<code>AutoEncryptLocalhost</code>](#exp_module_@small-tech/auto-encrypt-localhost--AutoEncryptLocalhost)  
+**Kind**: static property of [<code>module.exports</code>](#exp_module_@small-tech/auto-encrypt-localhost--module.exports)  
 **Example**  
 ```js
-const AutoEncryptLocalhost = require('@small-tech/auto-encrypt-localhost')
+import AutoEncryptLocalhost from '@small-tech/auto-encrypt-localhost'
 const server = AutoEncryptLocalhost.https.createServer()
 ```
-<a name="module_@small-tech/auto-encrypt-localhost--AutoEncryptLocalhost.createServer"></a>
+<a name="module_@small-tech/auto-encrypt-localhost--module.exports.createServer"></a>
 
-#### AutoEncryptLocalhost.createServer([options]) ⇒ <code>https.Server</code>
+#### module.exports.createServer([options]) ⇒ <code>https.Server</code>
 Automatically provisions trusted development-time (localhost) certificates in Node.js via mkcert.
 
-**Kind**: static method of [<code>AutoEncryptLocalhost</code>](#exp_module_@small-tech/auto-encrypt-localhost--AutoEncryptLocalhost)  
+**Kind**: static method of [<code>module.exports</code>](#exp_module_@small-tech/auto-encrypt-localhost--module.exports)  
 **Returns**: <code>https.Server</code> - The server instance returned by Node’s https.createServer() method.  
 
 | Param | Type | Default | Description |
@@ -122,9 +142,7 @@ We exist in part thanks to patronage by people like you. If you share [our visio
 
 ## Copyright
 
-&copy; 2020 [Aral Balkan](https://ar.al), [Small Technology Foundation](https://small-tech.org).
-
-Let’s Encrypt is a trademark of the Internet Security Research Group (ISRG). All rights reserved. Node.js is a trademark of Joyent, Inc. and is used with its permission. We are not endorsed by or affiliated with Joyent or ISRG.
+&copy; 2019-2021 [Aral Balkan](https://ar.al), [Small Technology Foundation](https://small-tech.org).
 
 ## License
 
